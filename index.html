@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>SCROLL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        iframe {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+
+        /* Pulsante SCROLL in basso */
+        .scroll-btn {
+            position: absolute;
+            bottom: 60px; /* come richiesto */
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            font-size: 28px;
+            border: none;
+            border-radius: 12px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            cursor: pointer;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="videos"></div>
+
+<script>
+    let videoList = [];
+    let history = [];
+    const HISTORY_SIZE = 50;
+
+    fetch("static/links.json")
+        .then(response => response.json())
+        .then(data => {
+            videoList = data;
+            loadRandomVideo();
+        });
+
+    function loadRandomVideo() {
+        let video;
+        let attempts = 0;
+
+        // Evita ripetizioni ravvicinate
+        do {
+            const randomIndex = Math.floor(Math.random() * videoList.length);
+            video = videoList[randomIndex];
+            attempts++;
+        } while (history.includes(video.id) && attempts < 20);
+
+        history.push(video.id);
+        if (history.length > HISTORY_SIZE) {
+            history.shift();
+        }
+
+        document.getElementById("videos").innerHTML = `
+            <div class="video-container">
+                <iframe
+                    id="ytplayer"
+                    src="https://www.youtube-nocookie.com/embed/${video.id}?rel=0&modestbranding=1&autoplay=1&controls=0&mute=1&enablejsapi=1"
+                    allow="autoplay"
+                    allowfullscreen>
+                </iframe>
+
+                <button class="scroll-btn" onclick="loadRandomVideo()">SCROLL</button>
+            </div>
+        `;
+
+        // Riattiva audio dopo autoplay
+        setTimeout(() => {
+            const iframe = document.getElementById("ytplayer");
+            iframe.contentWindow.postMessage(JSON.stringify({
+                event: "command",
+                func: "unMute",
+                args: []
+            }), "*");
+        }, 1200);
+    }
+</script>
+
+</body>
+</html>
