@@ -26,13 +26,14 @@ def get_links():
 
     return JSONResponse(data)
 
-# ============================================================
-# ENDPOINT PER AGGIORNARE IL DATABASE (USATO DAL TUO SCRIPT)
-# ============================================================
+from pydantic import BaseModel
+
+class LinksPayload(BaseModel):
+    data: list
 
 @app.put("/update_links")
-def update_links(data: list):
+def update_links(payload: LinksPayload):
     path = Path("static/links.json")
     with open(path, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(payload.data, f, indent=4)
     return {"status": "ok"}
