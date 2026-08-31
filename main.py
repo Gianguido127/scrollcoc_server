@@ -25,3 +25,14 @@ def get_links():
         data = json.load(f)
 
     return JSONResponse(data)
+
+# ============================================================
+# ENDPOINT PER AGGIORNARE IL DATABASE (USATO DAL TUO SCRIPT)
+# ============================================================
+
+@app.put("/update_links")
+def update_links(data: list):
+    path = Path("static/links.json")
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
+    return {"status": "ok"}
