@@ -68,7 +68,7 @@
     let history = [];
     const HISTORY_SIZE = 50;
 
-    fetch("static/links.json")
+    fetch("/api/links")
         .then(response => response.json())
         .then(data => {
             videoList = data;
