@@ -1,23 +1,20 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 import json
 from pathlib import Path
+from pydantic import BaseModel
 
 app = FastAPI()
-
-# Monta la cartella static (serve index.html, css, js, ecc.)
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Homepage → restituisce index.html
 @app.get("/")
 def home():
     return FileResponse("index.html")
 
-# API → restituisce il contenuto di links.json (ORA NELLA ROOT)
+# API → restituisce il contenuto di links.json (nella root)
 @app.get("/api/links")
 def get_links():
-    path = Path("links.json")   # <--- MODIFICA CORRETTA
+    path = Path("links.json")
     if not path.exists():
         return JSONResponse([], status_code=200)
 
@@ -26,15 +23,13 @@ def get_links():
 
     return JSONResponse(data)
 
-from pydantic import BaseModel
-
 class LinksPayload(BaseModel):
     data: list
 
-# UPDATE → salva links.json nella ROOT (NON in static/)
+# UPDATE → salva links.json nella root
 @app.put("/update_links")
 def update_links(payload: LinksPayload):
-    path = Path("links.json")   # <--- MODIFICA CORRETTA
+    path = Path("links.json")
     with open(path, "w") as f:
         json.dump(payload.data, f, indent=4)
     return {"status": "ok"}
