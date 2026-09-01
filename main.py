@@ -44,3 +44,7 @@ def count_links():
         data = json.load(f)
 
     return {"count": len(data)}
+
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
