@@ -33,3 +33,14 @@ def update_links(payload: LinksPayload):
     with open(path, "w") as f:
         json.dump(payload.data, f, indent=4)
     return {"status": "ok"}
+
+@app.get("/count")
+def count_links():
+    path = Path("links.json")
+    if not path.exists():
+        return {"count": 0}
+
+    with open(path, "r") as f:
+        data = json.load(f)
+
+    return {"count": len(data)}
