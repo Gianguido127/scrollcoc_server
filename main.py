@@ -31,51 +31,80 @@ def update_links(payload: dict):
     path = Path("links.json")
 
     # --- 1. ESTRAZIONE SICURA DEI DATI ---
-    # Accetta sia {"data": [...]} che direttamente [...]
+    # Accetta:
+    # - lista pura
+    # - dict con "data"
+    # - dict con "chunk"
+    # - qualsiasi cosa che contenga una lista
+    new_data = None
+
     if isinstance(payload, list):
         new_data = payload
-    elif isinstance(payload, dict) and "data" in payload and isinstance(payload["data"], list):
-        new_data = payload["data"]
-    else:
+
+    elif isinstance(payload, dict):
+        # Cerca una lista in qualsiasi chiave
+        for key, value in payload.items():
+            if isinstance(value, list):
+                new_data = value
+                break
+
+    # Se non abbiamo trovato una lista → errore controllato
+    if not isinstance(new_data, list):
         return JSONResponse(
-            {"status": "error", "reason": "Payload must be a list or contain a 'data' list"},
+            {"status": "error", "reason": "Payload must contain a list"},
             status_code=400
         )
 
     # --- 2. CARICAMENTO SICURO DEL FILE ---
+    existing = []
     if path.exists():
         try:
             with open(path, "r") as f:
-                existing = json.load(f)
-            if not isinstance(existing, list):
-                existing = []
-        except:
+                data = json.load(f)
+                if isinstance(data, list):
+                    existing = data
+        except Exception:
             existing = []
-    else:
-        existing = []
 
-    # --- 3. UNIONE ---
+    # --- 3. UNIONE DEI CHUNK (senza assumere tipi hashabili) ---
     combined = existing + new_data
 
-    # --- 4. RIMOZIONE DUPLICATI ---
-    seen = set()
+    # --- 4. RIMOZIONE DUPLICATI SENZA set() ---
     unique = []
     for item in combined:
-        if item not in seen:
-            seen.add(item)
-            unique.append(item)
+        # Confronto sicuro: JSON string
+        try:
+            marker = json.dumps(item, sort_keys=True)
+        except Exception:
+            # Se non serializzabile → lo salviamo comunque
+            marker = str(item)
 
-    # --- 5. SALVATAGGIO ---
+        if marker not in unique:
+            unique.append(marker)
+
+    # Convertiamo i marker JSON in oggetti veri
+    final_data = []
+    for marker in unique:
+        try:
+            final_data.append(json.loads(marker))
+        except Exception:
+            final_data.append(marker)
+
+    # --- 5. SCRITTURA SICURA ---
     try:
         with open(path, "w") as f:
-            json.dump(unique, f, indent=4)
+            json.dump(final_data, f, indent=4)
     except Exception as e:
         return JSONResponse(
             {"status": "error", "reason": f"write_failed: {str(e)}"},
             status_code=500
         )
 
-    return {"status": "ok", "added": len(new_data), "total": len(unique)}
+    return {
+        "status": "ok",
+        "added": len(new_data),
+        "total": len(final_data)
+    }
 
 
 @app.get("/count")
