@@ -27,37 +27,37 @@ class LinksPayload(BaseModel):
     data: list
 
 @app.put("/update_links")
-def update_links(payload: LinksPayload):
+def update_links(payload: dict):
     path = Path("links.json")
 
-    # --- 1. VALIDAZIONE DEL PAYLOAD ---
-    # Se payload.data NON è una lista → errore controllato (non crash)
-    if not isinstance(payload.data, list):
+    # --- 1. ESTRAZIONE SICURA DEI DATI ---
+    # Accetta sia {"data": [...]} che direttamente [...]
+    if isinstance(payload, list):
+        new_data = payload
+    elif isinstance(payload, dict) and "data" in payload and isinstance(payload["data"], list):
+        new_data = payload["data"]
+    else:
         return JSONResponse(
-            {"status": "error", "reason": "payload.data must be a list"},
+            {"status": "error", "reason": "Payload must be a list or contain a 'data' list"},
             status_code=400
         )
 
-    # --- 2. CARICAMENTO SICURO DEL FILE ESISTENTE ---
+    # --- 2. CARICAMENTO SICURO DEL FILE ---
     if path.exists():
         try:
             with open(path, "r") as f:
                 existing = json.load(f)
-
-            # Se il file NON contiene una lista → reset
             if not isinstance(existing, list):
                 existing = []
-
-        except Exception:
-            # Se il file è corrotto → reset
+        except:
             existing = []
     else:
         existing = []
 
-    # --- 3. UNIONE DEI CHUNK ---
-    combined = existing + payload.data
+    # --- 3. UNIONE ---
+    combined = existing + new_data
 
-    # --- 4. RIMOZIONE DUPLICATI MANTENENDO L'ORDINE ---
+    # --- 4. RIMOZIONE DUPLICATI ---
     seen = set()
     unique = []
     for item in combined:
@@ -65,7 +65,7 @@ def update_links(payload: LinksPayload):
             seen.add(item)
             unique.append(item)
 
-    # --- 5. SALVATAGGIO SICURO ---
+    # --- 5. SALVATAGGIO ---
     try:
         with open(path, "w") as f:
             json.dump(unique, f, indent=4)
@@ -75,11 +75,7 @@ def update_links(payload: LinksPayload):
             status_code=500
         )
 
-    return {
-        "status": "ok",
-        "added": len(payload.data),
-        "total": len(unique)
-    }
+    return {"status": "ok", "added": len(new_data), "total": len(unique)}
 
 
 @app.get("/count")
