@@ -30,17 +30,22 @@ class LinksPayload(BaseModel):
 def update_links(payload: LinksPayload):
     path = Path("links.json")
 
-    # 1. Se il file esiste, carica i dati attuali
+    # 1. Carica il file, ma solo se è una lista
     if path.exists():
-        with open(path, "r") as f:
-            existing = json.load(f)
+        try:
+            with open(path, "r") as f:
+                existing = json.load(f)
+            if not isinstance(existing, list):
+                existing = []
+        except:
+            existing = []
     else:
         existing = []
 
-    # 2. Aggiungi i nuovi ID al database
+    # 2. Aggiungi i nuovi ID
     combined = existing + payload.data
 
-    # 3. Rimuovi duplicati mantenendo l'ordine
+    # 3. Rimuovi duplicati
     seen = set()
     unique = []
     for item in combined:
@@ -48,7 +53,7 @@ def update_links(payload: LinksPayload):
             seen.add(item)
             unique.append(item)
 
-    # 4. Salva il risultato completo
+    # 4. Salva
     with open(path, "w") as f:
         json.dump(unique, f, indent=4)
 
