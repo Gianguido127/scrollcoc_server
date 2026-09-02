@@ -26,13 +26,34 @@ def get_links():
 class LinksPayload(BaseModel):
     data: list
 
-# UPDATE → salva links.json nella root
 @app.put("/update_links")
 def update_links(payload: LinksPayload):
     path = Path("links.json")
+
+    # 1. Se il file esiste, carica i dati attuali
+    if path.exists():
+        with open(path, "r") as f:
+            existing = json.load(f)
+    else:
+        existing = []
+
+    # 2. Aggiungi i nuovi ID al database
+    combined = existing + payload.data
+
+    # 3. Rimuovi duplicati mantenendo l'ordine
+    seen = set()
+    unique = []
+    for item in combined:
+        if item not in seen:
+            seen.add(item)
+            unique.append(item)
+
+    # 4. Salva il risultato completo
     with open(path, "w") as f:
-        json.dump(payload.data, f, indent=4)
-    return {"status": "ok"}
+        json.dump(unique, f, indent=4)
+
+    return {"status": "ok", "added": len(payload.data), "total": len(unique)}
+
 
 @app.get("/count")
 def count_links():
