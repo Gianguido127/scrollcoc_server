@@ -19,8 +19,8 @@ ADMINS = {
 PENDING_APPROVAL = {}  # username → token
 SESSIONS = set()       # utenti loggati e approvati
 
-SUPERADMIN_EMAIL = "superadminscrollcoc@gmail.com"   # <-- METTI LA TUA
-SMTP_USER = "superadminscrollcoc@gmail.com"          # <-- METTI LA TUA
+SUPERADMIN_EMAIL = "tommycangy@gmail.com"   # <-- METTI LA TUA
+SMTP_USER = "tommycangy@gmail.com"          # <-- METTI LA TUA
 SMTP_PASS = "yvyxtrcgvijlypxs"         # <-- PASSWORD PER APP
 
 
