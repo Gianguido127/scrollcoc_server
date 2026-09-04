@@ -186,9 +186,9 @@ async def login_admin(request: Request):
         # invia email al superadmin
         approve_link = f"https://scrollcoc-server.onrender.com/approve_admin?user={username}&token={token}"
 
-        send_email_to_superadmin()
+        send_email_to_superadmin(
             subject="Richiesta accesso admin",
-            body=f"""
+            body=f""")
 L'utente {username} sta tentando di accedere alla pagina admin.
 
 Approva l'accesso cliccando qui:
