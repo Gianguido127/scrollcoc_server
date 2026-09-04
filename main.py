@@ -95,31 +95,9 @@ async def update_links(request: Request):
         "total": len(unique)
     }
 
-@app.get("/count")
-def count_links():
-    path = Path("links.json")
-    if not path.exists():
-        return {"count": 0}
-
-    with open(path, "r") as f:
-        data = json.load(f)
-
-    return {"count": len(data)}
-
 @app.get("/ping")
 def ping():
     return {"status": "ok"}
-
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
-from pathlib import Path
-import json
-
-app = FastAPI()
-
-# ==========================
-# /admin - PAGINA HTML
-# ==========================
 
 ADMIN_HTML = """
 <!DOCTYPE html>
@@ -677,66 +655,7 @@ ADMIN_HTML = """
 </html>
 """
 
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_page():
     return ADMIN_HTML
-
-@app.get("/admin/get_all_links")
-def admin_get_all_links(page: int = 1, limit: int = 200):
-    path = Path("links.json")
-    data = []
-    if path.exists():
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            data = []
-
-    total = len(data)
-    if limit <= 0:
-        limit = 200
-    if page <= 0:
-        page = 1
-
-    total_pages = max(1, (total + limit - 1) // limit)
-    start = (page - 1) * limit
-    end = start + limit
-    slice_data = data[start:end]
-
-    return JSONResponse({
-        "page": page,
-        "total_pages": total_pages,
-        "total": total,
-        "links": slice_data
-    })
-
-# ==========================
-# /admin/count
-# ==========================
-
-@app.get("/admin/count")
-def admin_count():
-    path = Path("links.json")
-    data = []
-    if path.exists():
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            data = []
-    return JSONResponse({"count": len(data)})
-
-# ==========================
-# /admin/update_database
-# ==========================
-
-@app.post("/admin/update_database")
-async def admin_update_database():
-    # QUI in futuro integriamo la versione server-side di auto_update_shorts.py
-    # Per ora: stub che non modifica nulla, ma risponde in modo coerente.
-    return JSONResponse({
-        "status": "ok",
-        "message": "Update server-side non ancora implementato (stub).",
-        "added": 0,
-        "total": None
-    })
