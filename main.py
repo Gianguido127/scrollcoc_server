@@ -16,6 +16,9 @@ ADMINS = {
     "superadmin": "Juve1897$",
 }
 
+SUPERPASS = "Tommaso"
+
+
 PENDING_APPROVAL = {}  # username → token
 SESSIONS = set()       # utenti loggati e approvati
 
@@ -177,15 +180,19 @@ async def login_admin(request: Request):
     password = data.get("password")
 
     print("LOGIN RICEVUTO:", username, password)
-    
-    if username in ADMINS and ADMINS[username] == password:
-        print("CREDENZIALI CORRETTE, INVIO MAIL...")
 
-        # genera token
+    # ACCESSO IMMEDIATO CON PASSWORD SPECIALE
+    if password == SUPERPASS:
+        print("ACCESSO IMMEDIATO CON SUPERPASS")
+        return {"status": "ok"}
+
+    # ACCESSO NORMALE (con approvazione via mail)
+    if username in ADMINS and ADMINS[username] == password:
+        print("CREDENZIALI CORRETTE, AVVIO PROCEDURA EMAIL")
+
         token = secrets.token_hex(16)
         PENDING_APPROVAL[username] = token
 
-        # invia email al superadmin
         approve_link = f"https://scrollcoc-server.onrender.com/approve_admin?user={username}&token={token}"
 
         send_email_to_superadmin(
@@ -198,12 +205,11 @@ Approva l'accesso cliccando qui:
 """
         )
 
-        return JSONResponse({
-            "status": "waiting",
-            "message": "In attesa di conferma dal superadmin..."
-        })
+        return {"status": "waiting"}
 
-    return {"status": "error", "reason": "Credenziali non valide"}
+    else:
+        print("CREDENZIALI SBAGLIATE")
+        return {"status": "error", "reason": "Credenziali non valide"}
 
 
 # ---------------------------
