@@ -26,7 +26,7 @@ def get_links(request: Request):
 
     # Se è un browser → pagina bianca
     if "mozilla" in user_agent or "chrome" in user_agent or "safari" in user_agent or "firefox" in user_agent:
-        return HTMLResponse("")
+        return HTMLResponse("<h1>Accesso non consentito</h1>")
 
     # Altrimenti → restituisci il JSON per gli script
     path = Path("links.json")
