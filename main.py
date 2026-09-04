@@ -19,7 +19,14 @@ def home():
 
 # API → restituisce il contenuto di links.json (nella root)
 @app.get("/api/links")
-def get_links():
+def get_links(request: Request):
+    user_agent = request.headers.get("User-Agent", "").lower()
+
+    # Se è un browser → pagina vuota
+    if "mozilla" in user_agent or "chrome" in user_agent or "safari" in user_agent or "firefox" in user_agent:
+        return HTMLResponse("")  # pagina bianca
+
+    # Altrimenti → restituisci il JSON per gli script
     path = Path("links.json")
     if not path.exists():
         return JSONResponse([], status_code=200)
@@ -29,8 +36,6 @@ def get_links():
 
     return JSONResponse(data)
 
-class LinksPayload(BaseModel):
-    data: list
 
 from fastapi import Request
 
