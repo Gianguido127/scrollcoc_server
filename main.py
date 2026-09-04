@@ -107,21 +107,37 @@ def ping():
 
 
 @app.get("/t1m2s7", response_class=HTMLResponse)
-def admin_page():
-    html_path = Path("admin.html")  # oppure Path("templates/admin.html")
+def admin_page(request: Request):
+    user = request.cookies.get("admin_user")
+
+    # se non loggato → redirect
+    if user not in SESSIONS:
+        return RedirectResponse("/login_admin")
+
+    html_path = Path("admin.html")
     return html_path.read_text(encoding="utf-8")
+
 
 from auto_update_shorts_server import run_update
 @app.post("/t1m2s7/update_database")
-def update_database():
+def update_database(request: Request):
+    user = request.cookies.get("admin_user")
+    if user not in SESSIONS:
+        return RedirectResponse("/login_admin")
+
     result = run_update()
     return result
+
 
 from fastapi import Request
 
 @app.get("/login_admin", response_class=HTMLResponse)
 def login_admin_page():
     return Path("login_admin.html").read_text(encoding="utf-8")
+
+from fastapi.responses import RedirectResponse
+
+SESSIONS = set()  # contiene gli username loggati
 
 @app.post("/login_admin")
 async def login_admin(request: Request):
@@ -130,8 +146,13 @@ async def login_admin(request: Request):
     username = data.get("username")
     password = data.get("password")
 
-    # Controllo credenziali
     if username in ADMINS and ADMINS[username] == password:
-        return {"status": "ok"}
+        # salva la sessione
+        SESSIONS.add(username)
+
+        # crea la risposta
+        response = JSONResponse({"status": "ok"})
+        response.set_cookie("admin_user", username, max_age=3600)  # 1 ora
+        return response
 
     return {"status": "error", "reason": "Credenziali non valide"}
