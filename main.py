@@ -21,7 +21,7 @@ SESSIONS = set()       # utenti loggati e approvati
 
 SUPERADMIN_EMAIL = "superadminscrollcoc@gmail.com"   # <-- METTI LA TUA
 SMTP_USER = "superadminscrollcoc@gmail.com"          # <-- METTI LA TUA
-SMTP_PASS = "PASSWORD_APP_GMAIL"         # <-- PASSWORD PER APP
+SMTP_PASS = "yvyx trcg vijl ypxs"         # <-- PASSWORD PER APP
 
 
 # ---------------------------
