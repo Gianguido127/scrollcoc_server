@@ -106,3 +106,10 @@ def ping():
 def admin_page():
     html_path = Path("admin.html")  # oppure Path("templates/admin.html")
     return html_path.read_text(encoding="utf-8")
+
+from auto_update_shorts_server import run_update
+
+@app.post("/t1m2s7/update_database")
+def update_database():
+    result = run_update()
+    return result
