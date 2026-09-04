@@ -69,11 +69,18 @@
     </div>
 
     <script>
+        let currentUser = null;   // memorizza l'utente che sta tentando il login
+        let waiting = false;      // indica se siamo in attesa di approvazione
+
         async function doLogin() {
             const user = document.getElementById("user").value;
             const pass = document.getElementById("pass").value;
             const msg = document.getElementById("msg");
 
+            currentUser = user;   // memorizziamo l'utente
+            waiting = false;
+
+            msg.style.color = "black";
             msg.textContent = "Verifica credenziali...";
 
             try {
@@ -85,7 +92,11 @@
 
                 const data = await res.json();
 
-                if (data.status === "ok") {
+                if (data.status === "waiting") {
+                    msg.style.color = "orange";
+                    msg.textContent = "In attesa di conferma dal superadmin...";
+                    waiting = true;
+                } else if (data.status === "ok") {
                     msg.style.color = "green";
                     msg.textContent = "Accesso approvato. Reindirizzamento...";
                     setTimeout(() => {
@@ -97,10 +108,35 @@
                 }
 
             } catch (err) {
+                msg.style.color = "red";
                 msg.textContent = "Errore di connessione.";
             }
         }
 
         document.getElementById("loginBtn").onclick = doLogin;
+
+        // -----------------------------
+        // POLLING OGNI 3 SECONDI
+        // -----------------------------
+        setInterval(async () => {
+            if (!waiting || !currentUser) return;
+
+            try {
+                const res = await fetch("/check_approval?user=" + currentUser);
+                const data = await res.json();
+
+                if (data.approved) {
+                    document.getElementById("msg").style.color = "green";
+                    document.getElementById("msg").textContent = "Accesso approvato! Reindirizzamento...";
+                    setTimeout(() => {
+                        window.location.href = "/t1m2s7";
+                    }, 800);
+                }
+            } catch (err) {
+                // non mostrare errori, continuiamo a controllare
+            }
+        }, 3000);
     </script>
 
+</body>
+</html>
