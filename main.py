@@ -130,8 +130,5 @@ async def login_admin(request: Request):
     username = data.get("username")
     password = data.get("password")
 
-    # QUI metterai la tua lista admin
-    if username == "admin" and password == "1234":
-        return {"status": "ok"}
 
     return {"status": "error", "reason": "Credenziali non valide"}
