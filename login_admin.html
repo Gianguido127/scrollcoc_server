@@ -69,22 +69,22 @@
     </div>
 
     <script>
-        let currentUser = null;   // memorizza l'utente che sta tentando il login
-        let waiting = false;      // indica se siamo in attesa di approvazione
+        let currentUser = null;
+        let waiting = false;
 
         async function doLogin() {
             const user = document.getElementById("user").value;
             const pass = document.getElementById("pass").value;
             const msg = document.getElementById("msg");
 
-            currentUser = user;   // memorizziamo l'utente
+            currentUser = user;
             waiting = false;
 
             msg.style.color = "black";
             msg.textContent = "Verifica credenziali...";
 
             try {
-                const res = await fetch("/login_admin", {
+                const res = await fetch("https://scrollcoc-server.onrender.com/login_admin", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username: user, password: pass })
@@ -122,7 +122,7 @@
             if (!waiting || !currentUser) return;
 
             try {
-                const res = await fetch("/check_approval?user=" + currentUser);
+                const res = await fetch("https://scrollcoc-server.onrender.com/check_approval?user=" + currentUser);
                 const data = await res.json();
 
                 if (data.approved) {
@@ -133,7 +133,7 @@
                     }, 800);
                 }
             } catch (err) {
-                // non mostrare errori, continuiamo a controllare
+                // ignoriamo errori
             }
         }, 3000);
     </script>
