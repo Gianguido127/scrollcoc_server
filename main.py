@@ -102,7 +102,7 @@ def ping():
     return {"status": "ok"}
 
 
-@app.get("/admin", response_class=HTMLResponse)
+@app.get("/t1m2s7", response_class=HTMLResponse)
 def admin_page():
     html_path = Path("admin.html")  # oppure Path("templates/admin.html")
     return html_path.read_text(encoding="utf-8")
