@@ -227,4 +227,5 @@ def update():
     print(f"AGGIORNAMENTO COMPLETATO: {len(final)} shorts totali.")
 
 
-update()
+if __name__ == "__main__":
+    update()
