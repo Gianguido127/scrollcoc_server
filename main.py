@@ -5,6 +5,10 @@ from pathlib import Path
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 
+ADMINS = {
+    "superadmin": "Juve1897$",
+}
+
 
 app = FastAPI()
 
