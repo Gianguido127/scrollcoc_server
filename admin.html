@@ -68,6 +68,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 15px;
+            margin-right: 10px;
         }
 
         button:hover {
@@ -89,6 +90,7 @@
     <!-- DATABASE SECTION -->
     <div class="section">
         <h2>Database</h2>
+        <button id="copyBtn">Copia database</button>
         <div id="databaseBox">Caricamento…</div>
     </div>
 
@@ -120,6 +122,20 @@
             }
         }
 
+        async function copyDatabase() {
+            try {
+                const res = await fetch("/api/links");
+                const data = await res.json();
+                const text = JSON.stringify(data, null, 2);
+
+                await navigator.clipboard.writeText(text);
+                alert("Database copiato negli appunti!");
+            } catch (err) {
+                alert("Errore nella copia del database.");
+                console.error(err);
+            }
+        }
+
         async function updateDatabase() {
             const log = document.getElementById("updateLog");
             log.textContent = "Aggiornamento in corso...\n";
@@ -147,8 +163,9 @@
         updateCount();
         loadDatabase();
 
-        // Pulsante update
+        // Pulsanti
         document.getElementById("updateBtn").onclick = updateDatabase;
+        document.getElementById("copyBtn").onclick = copyDatabase;
     </script>
 
 </body>
