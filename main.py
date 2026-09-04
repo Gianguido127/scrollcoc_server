@@ -176,8 +176,10 @@ async def login_admin(request: Request):
     username = data.get("username")
     password = data.get("password")
 
-    # credenziali corrette?
+    print("LOGIN RICEVUTO:", username, password)
+    
     if username in ADMINS and ADMINS[username] == password:
+    print("CREDENZIALI CORRETTE, INVIO MAIL...")
 
         # genera token
         token = secrets.token_hex(16)
@@ -188,7 +190,7 @@ async def login_admin(request: Request):
 
         send_email_to_superadmin(
             subject="Richiesta accesso admin",
-            body=f""")
+            body=f"""
 L'utente {username} sta tentando di accedere alla pagina admin.
 
 Approva l'accesso cliccando qui:
