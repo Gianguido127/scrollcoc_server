@@ -112,3 +112,22 @@ from auto_update_shorts_server import run_update
 def update_database():
     result = run_update()
     return result
+
+from fastapi import Request
+
+@app.get("/login_admin", response_class=HTMLResponse)
+def login_admin_page():
+    return Path("login_admin.html").read_text(encoding="utf-8")
+
+@app.post("/login_admin")
+async def login_admin(request: Request):
+    data = await request.json()
+
+    username = data.get("username")
+    password = data.get("password")
+
+    # QUI metterai la tua lista admin
+    if username == "admin" and password == "1234":
+        return {"status": "ok"}
+
+    return {"status": "error", "reason": "Credenziali non valide"}
