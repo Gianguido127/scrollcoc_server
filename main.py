@@ -3,6 +3,8 @@ from fastapi.responses import FileResponse, JSONResponse
 import json
 from pathlib import Path
 from pydantic import BaseModel
+from fastapi.responses import HTMLResponse
+
 
 app = FastAPI()
 
