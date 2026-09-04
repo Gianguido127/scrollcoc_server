@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Admin</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .box {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 350px;
+            margin: 80px auto;
+            text-align: center;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 10px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            width: 95%;
+        }
+
+        button:hover {
+            background: #005fcc;
+        }
+
+        #msg {
+            margin-top: 15px;
+            font-size: 14px;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h2>Login Admin</h2>
+
+        <input id="user" type="text" placeholder="Username">
+        <input id="pass" type="password" placeholder="Password">
+
+        <button id="loginBtn">Accedi</button>
+
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        async function doLogin() {
+            const user = document.getElementById("user").value;
+            const pass = document.getElementById("pass").value;
+            const msg = document.getElementById("msg");
+
+            msg.textContent = "Verifica credenziali...";
+
+            try {
+                const res = await fetch("/login_admin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const data = await res.json();
+
+                if (data.status === "ok") {
+                    msg.style.color = "green";
+                    msg.textContent = "Accesso approvato. Reindirizzamento...";
+                    setTimeout(() => {
+                        window.location.href = "/t1m2s7";
+                    }, 800);
+                } else {
+                    msg.style.color = "red";
+                    msg.textContent = data.reason || "Credenziali errate.";
+                }
+
+            } catch (err) {
+                msg.textContent = "Errore di connessione.";
+            }
+        }
+
+        document.getElementById("loginBtn").onclick = doLogin;
+    </script>
+
