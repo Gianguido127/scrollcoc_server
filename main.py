@@ -29,6 +29,9 @@ SMTP_PASS = "yvyxtrcgvijlypxs"
 # ---------------------------
 
 def send_email_to_superadmin(subject, body):
+    print("Sto provando a inviare la mail...")
+    print("SMTP PASS:", SMTP_PASS)
+
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = SMTP_USER
@@ -38,6 +41,7 @@ def send_email_to_superadmin(subject, body):
         server.login(SMTP_USER, SMTP_PASS)
         server.sendmail(SMTP_USER, SUPERADMIN_EMAIL, msg.as_string())
 
+    print("Mail inviata dal server FastAPI")
 
 # ---------------------------
 # HOMEPAGE
@@ -182,9 +186,7 @@ async def login_admin(request: Request):
         # invia email al superadmin
         approve_link = f"https://scrollcoc-server.onrender.com/approve_admin?user={username}&token={token}"
 
-        send_email_to_superadmin(
-            print("Sto provando a inviare la mail...")
-            print("SMTP PASS:", SMTP_PASS)
+        send_email_to_superadmin()
             subject="Richiesta accesso admin",
             body=f"""
 L'utente {username} sta tentando di accedere alla pagina admin.
