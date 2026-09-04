@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>ScrollCoC Admin</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            font-size: 20px;
+        }
+
+        #countNumber {
+            font-size: 32px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #databaseBox {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            padding: 10px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+            font-family: monospace;
+            border-radius: 6px;
+        }
+
+        #updateLog {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            padding: 10px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+            font-family: monospace;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 10px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #005fcc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>ScrollCoC Admin</h1>
+    <p>Controllo minimale del database shorts.</p>
+
+    <!-- COUNT SECTION -->
+    <div class="section">
+        <h2>Conteggio totale</h2>
+        <div id="countNumber">–</div>
+        <small>Aggiornato automaticamente ogni 3 secondi.</small>
+    </div>
+
+    <!-- DATABASE SECTION -->
+    <div class="section">
+        <h2>Database (contenuto di /api/links)</h2>
+        <div id="databaseBox">Caricamento…</div>
+    </div>
+
+    <!-- UPDATE SECTION -->
+    <div class="section">
+        <h2>Aggiorna database</h2>
+        <button id="updateBtn">Aggiorna ora</button>
+        <div id="updateLog"></div>
+    </div>
+
+    <script>
+        async function updateCount() {
+            try {
+                const res = await fetch("/api/links");
+                const data = await res.json();
+                document.getElementById("countNumber").textContent = data.length;
+            } catch (err) {
+                document.getElementById("countNumber").textContent = "Errore";
+            }
+        }
+
+        async function loadDatabase() {
+            try {
+                const res = await fetch("/api/links");
+                const data = await res.json();
+                document.getElementById("databaseBox").textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById("databaseBox").textContent = "Errore nel caricamento.";
+            }
+        }
+
+        async function updateDatabase() {
+            const log = document.getElementById("updateLog");
+            log.textContent = "Aggiornamento in corso...\n";
+
+            try {
+                const res = await fetch("/admin/update_database", { method: "POST" });
+                const data = await res.json();
+
+                log.textContent += "Status: " + data.status + "\n";
+                log.textContent += "Messaggio: " + data.message + "\n";
+                log.textContent += "Aggiunti: " + data.added + "\n";
+                log.textContent += "Totale: " + data.total + "\n";
+
+                loadDatabase();
+                updateCount();
+            } catch (err) {
+                log.textContent += "Errore: " + err;
+            }
+        }
+
+        // Aggiornamento automatico del count
+        setInterval(updateCount, 3000);
+
+        // Caricamento iniziale
+        updateCount();
+        loadDatabase();
+
+        // Pulsante update
+        document.getElementById("updateBtn").onclick = updateDatabase;
+    </script>
+
+</body>
+</html>
