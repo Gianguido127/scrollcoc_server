@@ -21,22 +21,15 @@ def home():
 from fastapi import Request
 
 @app.get("/api/links")
-def get_links(request: Request):
-    user_agent = request.headers.get("User-Agent", "").lower()
-
-    # Se è un browser → pagina bianca
-    if "mozilla" in user_agent or "chrome" in user_agent or "safari" in user_agent or "firefox" in user_agent:
-        return HTMLResponse("<h1>Accesso non consentito</h1>")
-
-    # Altrimenti → restituisci il JSON per gli script
+def get_links():
     path = Path("links.json")
     if not path.exists():
-        return JSONResponse([], status_code=200)
+        return []
 
     with open(path, "r") as f:
         data = json.load(f)
 
-    return JSONResponse(data)
+    return data
 
 from fastapi import Request
 
