@@ -130,5 +130,8 @@ async def login_admin(request: Request):
     username = data.get("username")
     password = data.get("password")
 
+    # Controllo credenziali
+    if username in ADMINS and ADMINS[username] == password:
+        return {"status": "ok"}
 
     return {"status": "error", "reason": "Credenziali non valide"}
