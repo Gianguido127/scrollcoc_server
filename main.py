@@ -137,9 +137,8 @@ async def login_admin(request: Request):
         response.set_cookie(
             key="admin_user",
             value=username,
-            max_age=3600,          # 1 ora
             httponly=True,
-            secure=False,          # se metti https puoi mettere True
+            secure=False,
             samesite="strict"
         )
 
