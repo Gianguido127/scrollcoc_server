@@ -116,6 +116,8 @@ def login_admin_page():
 # LOGIN ADMIN SEMPLICE
 # ---------------------------
 
+from fastapi.responses import JSONResponse
+
 @app.post("/login_admin")
 async def login_admin(request: Request):
     data = await request.json()
@@ -127,8 +129,22 @@ async def login_admin(request: Request):
 
     if username in ADMINS and ADMINS[username] == password:
         print("ACCESSO APPROVATO")
+
         SESSIONS.add(username)
-        return {"status": "ok"}
+
+        # Risposta con cookie
+        response = JSONResponse({"status": "ok"})
+        response.set_cookie(
+            key="admin_user",
+            value=username,
+            max_age=3600,          # 1 ora
+            httponly=True,
+            secure=False,          # se metti https puoi mettere True
+            samesite="strict"
+        )
+
+        return response
+
     else:
         print("CREDENZIALI SBAGLIATE")
         return {"status": "error", "reason": "Credenziali non valide"}
