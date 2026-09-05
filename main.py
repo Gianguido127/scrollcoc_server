@@ -2,9 +2,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, RedirectResponse
 import json
 from pathlib import Path
-import secrets
-import smtplib
-from email.mime.text import MIMEText
 
 app = FastAPI()
 
@@ -16,35 +13,7 @@ ADMINS = {
     "superadmin": "Juve1897$",
 }
 
-SUPERPASS = "Tommaso"
-
-
-PENDING_APPROVAL = {}  # username → token
-SESSIONS = set()       # utenti loggati e approvati
-
-SUPERADMIN_EMAIL = "tommycangy@gmail.com"  
-SMTP_USER = "superadminscrollcoc@gmail.com"         
-SMTP_PASS = "yvyxtrcgvijlypxs"        
-
-
-# ---------------------------
-# FUNZIONE INVIO EMAIL
-# ---------------------------
-
-def send_email_to_superadmin(subject, body):
-    print("Sto provando a inviare la mail...")
-    print("SMTP PASS:", SMTP_PASS)
-
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = SMTP_USER
-    msg["To"] = SUPERADMIN_EMAIL
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(SMTP_USER, SMTP_PASS)
-        server.sendmail(SMTP_USER, SUPERADMIN_EMAIL, msg.as_string())
-
-    print("Mail inviata dal server FastAPI")
+SESSIONS = set()  # utenti loggati
 
 # ---------------------------
 # HOMEPAGE
@@ -54,9 +23,8 @@ def send_email_to_superadmin(subject, body):
 def home():
     return FileResponse("index.html")
 
-
 # ---------------------------
-# API LINKS (normale)
+# API LINKS
 # ---------------------------
 
 @app.get("/api/links")
@@ -64,12 +32,8 @@ def get_links():
     path = Path("links.json")
     if not path.exists():
         return []
-
     with open(path, "r") as f:
-        data = json.load(f)
-
-    return data
-
+        return json.load(f)
 
 # ---------------------------
 # UPDATE LINKS
@@ -78,14 +42,7 @@ def get_links():
 @app.put("/update_links")
 async def update_links(request: Request):
     path = Path("links.json")
-
-    try:
-        payload = await request.json()
-    except Exception:
-        return JSONResponse({"status": "error", "reason": "Invalid JSON"}, status_code=400)
-
-    if not isinstance(payload, dict):
-        return JSONResponse({"status": "error", "reason": "Payload must be a dict"}, status_code=400)
+    payload = await request.json()
 
     if "data" not in payload or not isinstance(payload["data"], list):
         return JSONResponse({"status": "error", "reason": "'data' must be a list"}, status_code=400)
@@ -96,10 +53,8 @@ async def update_links(request: Request):
     if path.exists():
         try:
             with open(path, "r") as f:
-                data = json.load(f)
-                if isinstance(data, list):
-                    existing = data
-        except Exception:
+                existing = json.load(f)
+        except:
             existing = []
 
     combined = existing + new_data
@@ -112,14 +67,10 @@ async def update_links(request: Request):
             seen.add(marker)
             unique.append(item)
 
-    try:
-        with open(path, "w") as f:
-            json.dump(unique, f, indent=4)
-    except Exception as e:
-        return JSONResponse({"status": "error", "reason": f"write_failed: {str(e)}"}, status_code=500)
+    with open(path, "w") as f:
+        json.dump(unique, f, indent=4)
 
     return {"status": "ok", "added": len(new_data), "total": len(unique)}
-
 
 # ---------------------------
 # PING
@@ -129,7 +80,6 @@ async def update_links(request: Request):
 def ping():
     return {"status": "ok"}
 
-
 # ---------------------------
 # PAGINA ADMIN (protetta)
 # ---------------------------
@@ -137,12 +87,9 @@ def ping():
 @app.get("/t1m2s7", response_class=HTMLResponse)
 def admin_page(request: Request):
     user = request.cookies.get("admin_user")
-
     if user not in SESSIONS:
         return RedirectResponse("/login_admin")
-
     return Path("admin.html").read_text(encoding="utf-8")
-
 
 # ---------------------------
 # UPDATE DATABASE (protetto)
@@ -155,9 +102,7 @@ def update_database(request: Request):
     user = request.cookies.get("admin_user")
     if user not in SESSIONS:
         return RedirectResponse("/login_admin")
-
     return run_update()
-
 
 # ---------------------------
 # PAGINA LOGIN
@@ -167,9 +112,8 @@ def update_database(request: Request):
 def login_admin_page():
     return Path("login_admin.html").read_text(encoding="utf-8")
 
-
 # ---------------------------
-# LOGIN ADMIN → RICHIESTA APPROVAZIONE
+# LOGIN ADMIN SEMPLICE
 # ---------------------------
 
 @app.post("/login_admin")
@@ -181,58 +125,10 @@ async def login_admin(request: Request):
 
     print("LOGIN RICEVUTO:", username, password)
 
-    # ACCESSO IMMEDIATO CON PASSWORD SPECIALE
-    if password == SUPERPASS:
-        print("ACCESSO IMMEDIATO CON SUPERPASS")
-        return {"status": "ok"}
-
-    # ACCESSO NORMALE (con approvazione via mail)
     if username in ADMINS and ADMINS[username] == password:
-        print("CREDENZIALI CORRETTE, AVVIO PROCEDURA EMAIL")
-
-        token = secrets.token_hex(16)
-        PENDING_APPROVAL[username] = token
-
-        approve_link = f"https://scrollcoc-server.onrender.com/approve_admin?user={username}&token={token}"
-
-        send_email_to_superadmin(
-            subject="Richiesta accesso admin",
-            body=f"""
-L'utente {username} sta tentando di accedere alla pagina admin.
-
-Approva l'accesso cliccando qui:
-{approve_link}
-"""
-        )
-
-        return {"status": "waiting"}
-
+        print("ACCESSO APPROVATO")
+        SESSIONS.add(username)
+        return {"status": "ok"}
     else:
         print("CREDENZIALI SBAGLIATE")
         return {"status": "error", "reason": "Credenziali non valide"}
-
-
-# ---------------------------
-# APPROVAZIONE SUPERADMIN
-# ---------------------------
-
-@app.get("/approve_admin")
-def approve_admin(user: str, token: str):
-    if user in PENDING_APPROVAL and PENDING_APPROVAL[user] == token:
-        del PENDING_APPROVAL[user]
-        SESSIONS.add(user)
-
-        response = RedirectResponse("/t1m2s7")
-        response.set_cookie("admin_user", user, max_age=3600)
-        return response
-
-    return HTMLResponse("Token non valido.")
-
-
-# ---------------------------
-# CHECK APPROVAL (polling)
-# ---------------------------
-
-@app.get("/check_approval")
-def check_approval(user: str):
-    return {"approved": user in SESSIONS}
