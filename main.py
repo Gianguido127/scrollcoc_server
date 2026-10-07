@@ -111,6 +111,10 @@ def update_database(request: Request):
 # STREAMING LOG (SSE)
 # ---------------------------
 
+from fastapi.responses import StreamingResponse
+import asyncio
+import auto_update_shorts
+
 @app.get("/stream_update")
 async def stream_update():
     async def event_generator():
@@ -122,7 +126,8 @@ async def stream_update():
                 last += 1
                 yield f"data: {msg}\n\n"
 
-    return Response(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 # ---------------------------
 # PAGINA LOGIN
