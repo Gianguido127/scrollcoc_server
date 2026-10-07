@@ -6,6 +6,16 @@ import random
 import string
 import re
 
+# ============================================================
+# BUFFER LOG PER STREAMING SSE
+# ============================================================
+
+LOG_BUFFER = []
+
+def send_log(msg):
+    LOG_BUFFER.append(msg)
+    print(msg)  # rimane per debug
+
 
 # ============================================================
 # FUNZIONE DI RICHIESTA SICURA (ANTI-BLOCCO YOUTUBE)
@@ -17,11 +27,11 @@ def safe_get(url, retries=5, delay=1):
             r = requests.get(url, timeout=10)
             if r.status_code == 200:
                 return r
-            print(f"Status {r.status_code} da YouTube, retry...")
+            send_log(f"Status {r.status_code} da YouTube, retry...")
         except Exception as e:
-            print(f"Errore ({i+1}/{retries}) su {url}: {e}")
+            send_log(f"Errore ({i+1}/{retries}) su {url}: {e}")
         time.sleep(delay)
-    print(f"ERRORE FATALE: impossibile raggiungere {url}")
+    send_log(f"ERRORE FATALE: impossibile raggiungere {url}")
     return None
 
 
@@ -55,7 +65,7 @@ SEARCH_KEYWORDS = [
 
 def fetch_keyword_search():
     for kw in SEARCH_KEYWORDS:
-        print(f"Ricerca shorts: {kw}")
+        send_log(f"Ricerca shorts: {kw}")
         url = f"https://www.youtube.com/results?search_query={kw.replace(' ', '+')}"
         r = safe_get(url)
         if not r:
@@ -71,7 +81,7 @@ def fetch_keyword_search():
 
 def fetch_letter_search():
     for letter in string.ascii_lowercase:
-        print(f"Ricerca shorts per lettera: {letter}")
+        send_log(f"Ricerca shorts per lettera: {letter}")
         url = f"https://www.youtube.com/results?search_query={letter}+shorts"
         r = safe_get(url)
         if not r:
@@ -87,7 +97,7 @@ def fetch_letter_search():
 
 def fetch_number_search():
     for num in range(10, 101):
-        print(f"Ricerca shorts per numero: {num}")
+        send_log(f"Ricerca shorts per numero: {num}")
         url = f"https://www.youtube.com/results?search_query={num}+shorts"
         r = safe_get(url)
         if not r:
@@ -105,7 +115,7 @@ EMOJIS = ["😂", "⚽", "🎮", "🔥", "🐶", "😱", "😎", "💀"]
 
 def fetch_emoji_search():
     for emoji in EMOJIS:
-        print(f"Ricerca shorts per emoji: {emoji}")
+        send_log(f"Ricerca shorts per emoji: {emoji}")
         url = f"https://www.youtube.com/results?search_query={emoji}+shorts"
         r = safe_get(url)
         if not r:
@@ -169,7 +179,7 @@ ALL_QUERIES = (
 
 def fetch_super_aggressive():
     for kw in ALL_QUERIES:
-        print(f"Ricerca super-aggressiva: {kw}")
+        send_log(f"Ricerca super-aggressiva: {kw}")
         url = f"https://www.youtube.com/results?search_query={kw.replace(' ', '+')}"
         r = safe_get(url)
         if not r:
@@ -185,32 +195,28 @@ def fetch_super_aggressive():
 
 def update():
 
-    # CARICA I VECCHI LINK DAL SERVER (NUOVA VERSIONE)
+    send_log("=== INIZIO UPDATE SHORTS ===")
+
     old_links = set()
     try:
         r = requests.get("https://scrollcoc-server.onrender.com/api/links", timeout=30)
         server_data = r.json()
         for item in server_data:
             old_links.add(item["id"])
-        print(f"Vecchi link caricati dal server: {len(old_links)}")
+        send_log(f"Vecchi link caricati dal server: {len(old_links)}")
     except Exception as e:
-        print("ERRORE nel caricamento dei vecchi link dal server:", e)
-        print("Procedo con old_links = 0 (NON IDEALE)")
+        send_log(f"ERRORE nel caricamento dei vecchi link dal server: {e}")
+        send_log("Procedo con old_links = 0 (NON IDEALE)")
 
-    # PESCA DA TUTTE LE FONTI
     fetch_super_aggressive()
     fetch_keyword_search()
     fetch_letter_search()
     fetch_number_search()
     fetch_emoji_search()
 
-    # Unisci vecchi + nuovi
     final_links = old_links.union(shorts_ids)
-
-    # Salva tutto
     final = [{"id": vid} for vid in final_links]
 
-    # Spezza in chunk da 500
     chunks = [final[i:i+500] for i in range(0, len(final), 500)]
 
     for idx, chunk in enumerate(chunks):
@@ -220,11 +226,12 @@ def update():
                 json={"data": chunk},
                 timeout=60
             )
-            print(f"CHUNK {idx+1}/{len(chunks)} → SERVER RESPONSE:", r.text)
+            send_log(f"CHUNK {idx+1}/{len(chunks)} → SERVER RESPONSE: {r.text}")
         except Exception as e:
-            print(f"ERRORE nel chunk {idx+1}: {e}")
+            send_log(f"ERRORE nel chunk {idx+1}: {e}")
 
-    print(f"AGGIORNAMENTO COMPLETATO: {len(final)} shorts totali.")
+    send_log(f"AGGIORNAMENTO COMPLETATO: {len(final)} shorts totali.")
+    send_log("=== FINE UPDATE ===")
 
 
 if __name__ == "__main__":
