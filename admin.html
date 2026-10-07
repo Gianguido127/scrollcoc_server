@@ -102,71 +102,68 @@
     </div>
 
     <script>
-        async function updateCount() {
-            try {
-                const res = await fetch("/api/links");
-                const data = await res.json();
-                document.getElementById("countNumber").textContent = data.length;
-            } catch (err) {
-                document.getElementById("countNumber").textContent = "Errore";
-            }
+    async function updateCount() {
+        try {
+            const res = await fetch("/api/links");
+            const data = await res.json();
+            document.getElementById("countNumber").textContent = data.length;
+        } catch (err) {
+            document.getElementById("countNumber").textContent = "Errore";
         }
+    }
 
-        async function loadDatabase() {
-            try {
-                const res = await fetch("/api/links");
-                const data = await res.json();
-                document.getElementById("databaseBox").textContent = JSON.stringify(data, null, 2);
-            } catch (err) {
-                document.getElementById("databaseBox").textContent = "Errore nel caricamento.";
-            }
+    async function loadDatabase() {
+        try {
+            const res = await fetch("/api/links");
+            const data = await res.json();
+            document.getElementById("databaseBox").textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+            document.getElementById("databaseBox").textContent = "Errore nel caricamento.";
         }
+    }
 
-        async function copyDatabase() {
-            try {
-                const res = await fetch("/api/links");
-                const data = await res.json();
-                const text = JSON.stringify(data, null, 2);
+    async function copyDatabase() {
+        try {
+            const res = await fetch("/api/links");
+            const data = await res.json();
+            const text = JSON.stringify(data, null, 2);
 
-                await navigator.clipboard.writeText(text);
-                alert("Database copiato negli appunti!");
-            } catch (err) {
-                alert("Errore nella copia del database.");
-                console.error(err);
-            }
+            await navigator.clipboard.writeText(text);
+            alert("Database copiato negli appunti!");
+        } catch (err) {
+            alert("Errore nella copia del database.");
+            console.error(err);
         }
+    }
 
-        async function updateDatabase() {
-            const log = document.getElementById("updateLog");
-            log.textContent = "Aggiornamento in corso...\n";
+    async function updateDatabase() {
+        const log = document.getElementById("updateLog");
+        log.textContent = "";
 
-            try {
-                const res = await fetch("/t1m2s7/update_database", { method: "POST" });
-                const data = await res.json();
+        // STREAMING LOG IN DIRETTA
+        const evtSource = new EventSource("/stream_update");
 
-                log.textContent += "Status: " + data.status + "\n";
-                log.textContent += "Messaggio: " + data.message + "\n";
-                log.textContent += "Aggiunti: " + data.added + "\n";
-                log.textContent += "Totale: " + data.total + "\n";
+        evtSource.onmessage = function(event) {
+            log.textContent += event.data + "\n";
+            log.scrollTop = log.scrollHeight;
+        };
 
-                loadDatabase();
-                updateCount();
-            } catch (err) {
-                log.textContent += "Errore: " + err;
-            }
-        }
+        // AVVIA L'UPDATE
+        await fetch("/t1m2s7/update_database", { method: "POST" });
+    }
 
-        // Aggiornamento automatico del count
-        setInterval(updateCount, 3000);
+    // Aggiornamento automatico del count
+    setInterval(updateCount, 3000);
 
-        // Caricamento iniziale
-        updateCount();
-        loadDatabase();
+    // Caricamento iniziale
+    updateCount();
+    loadDatabase();
 
-        // Pulsanti
-        document.getElementById("updateBtn").onclick = updateDatabase;
-        document.getElementById("copyBtn").onclick = copyDatabase;
-    </script>
+    // Pulsanti
+    document.getElementById("updateBtn").onclick = updateDatabase;
+    document.getElementById("copyBtn").onclick = copyDatabase;
+</script>
+
 
 </body>
 </html>
