@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, RedirectResponse
 import json
 from pathlib import Path
+import asyncio
 
 app = FastAPI()
 
@@ -96,13 +97,32 @@ def admin_page(request: Request):
 # ---------------------------
 
 from auto_update_shorts_server import run_update
+import auto_update_shorts
 
 @app.post("/t1m2s7/update_database")
 def update_database(request: Request):
     user = request.cookies.get("admin_user")
     if user not in SESSIONS:
         return RedirectResponse("/login_admin")
+    auto_update_shorts.LOG_BUFFER.clear()
     return run_update()
+
+# ---------------------------
+# STREAMING LOG (SSE)
+# ---------------------------
+
+@app.get("/stream_update")
+async def stream_update():
+    async def event_generator():
+        last = 0
+        while True:
+            await asyncio.sleep(0.5)
+            while last < len(auto_update_shorts.LOG_BUFFER):
+                msg = auto_update_shorts.LOG_BUFFER[last]
+                last += 1
+                yield f"data: {msg}\n\n"
+
+    return Response(event_generator(), media_type="text/event-stream")
 
 # ---------------------------
 # PAGINA LOGIN
@@ -132,7 +152,6 @@ async def login_admin(request: Request):
 
         SESSIONS.add(username)
 
-        # Risposta con cookie
         response = JSONResponse({"status": "ok"})
         response.set_cookie(
             key="admin_user",
