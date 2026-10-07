@@ -141,7 +141,7 @@
             log.textContent = "Aggiornamento in corso...\n";
 
             try {
-                const res = await fetch("/admin/update_database", { method: "POST" });
+                const res = await fetch("/t1m2s7/update_database", { method: "POST" });
                 const data = await res.json();
 
                 log.textContent += "Status: " + data.status + "\n";
