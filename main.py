@@ -172,3 +172,5 @@ async def login_admin(request: Request):
     else:
         print("CREDENZIALI SBAGLIATE")
         return {"status": "error", "reason": "Credenziali non valide"}
+
+#svuota database
