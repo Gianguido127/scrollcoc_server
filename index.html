@@ -10,8 +10,7 @@
             margin: 0;
             padding: 0;
             background: black;
-            overflow: hidden;
-            height: 100vh;
+            overflow-x: hidden;
             width: 100vw;
         }
 
@@ -32,10 +31,9 @@
             border: none;
         }
 
-        /* Pulsante SCROLL in basso */
         .scroll-btn {
             position: absolute;
-            bottom: 60px; /* come richiesto */
+            bottom: 60px;
             left: 50%;
             transform: translateX(-50%);
             padding: 15px 30px;
@@ -68,23 +66,30 @@ let allVideos = [];
 let currentIndex = 0;
 const CHUNK_SIZE = 20;
 
+// Mescola array (Fisher-Yates)
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 function loadNextChunk() {
     const container = document.getElementById("videos");
-
     const slice = allVideos.slice(currentIndex, currentIndex + CHUNK_SIZE);
 
     slice.forEach((vid, i) => {
         const div = document.createElement("div");
-        div.className = "video-box";
+        div.className = "video-container";
 
         div.innerHTML = `
             <iframe
-                width="560"
-                height="315"
-                src="https://www.youtube.com/embed/${vid.id}"
-                frameborder="0"
+                src="https://www.youtube-nocookie.com/embed/${vid.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
+                allow="autoplay"
                 allowfullscreen
             ></iframe>
+
+            <button class="scroll-btn">SCROLL</button>
         `;
 
         container.appendChild(div);
@@ -94,9 +99,17 @@ function loadNextChunk() {
             const preload = document.createElement("link");
             preload.rel = "preload";
             preload.as = "document";
-            preload.href = `https://www.youtube.com/embed/${slice[i+1].id}`;
+            preload.href = `https://www.youtube-nocookie.com/embed/${slice[i+1].id}`;
             document.head.appendChild(preload);
         }
+
+        // Pulsante scroll → passa al prossimo video
+        div.querySelector(".scroll-btn").onclick = () => {
+            window.scrollBy({
+                top: window.innerHeight,
+                behavior: "smooth"
+            });
+        };
     });
 
     currentIndex += CHUNK_SIZE;
@@ -105,6 +118,8 @@ function loadNextChunk() {
 async function init() {
     const res = await fetch("/api/links");
     allVideos = await res.json();
+
+    shuffle(allVideos); // RANDOM
 
     loadNextChunk();
 }
@@ -122,7 +137,6 @@ window.addEventListener("scroll", () => {
 
 init();
 </script>
-
 
 </body>
 </html>
