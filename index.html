@@ -64,57 +64,65 @@
 <div id="videos"></div>
 
 <script>
-    let videoList = [];
-    let history = [];
-    const HISTORY_SIZE = 50;
+let allVideos = [];
+let currentIndex = 0;
+const CHUNK_SIZE = 20;
 
-    fetch("/api/links")
-        .then(response => response.json())
-        .then(data => {
-            videoList = data;
-            loadRandomVideo();
-        });
+function loadNextChunk() {
+    const container = document.getElementById("videos");
 
-    function loadRandomVideo() {
-        let video;
-        let attempts = 0;
+    const slice = allVideos.slice(currentIndex, currentIndex + CHUNK_SIZE);
 
-        // Evita ripetizioni ravvicinate
-        do {
-            const randomIndex = Math.floor(Math.random() * videoList.length);
-            video = videoList[randomIndex];
-            attempts++;
-        } while (history.includes(video.id) && attempts < 20);
+    slice.forEach((vid, i) => {
+        const div = document.createElement("div");
+        div.className = "video-box";
 
-        history.push(video.id);
-        if (history.length > HISTORY_SIZE) {
-            history.shift();
-        }
-
-        document.getElementById("videos").innerHTML = `
-            <div class="video-container">
-                <iframe
-                    id="ytplayer"
-                    src="https://www.youtube-nocookie.com/embed/${video.id}?rel=0&modestbranding=1&autoplay=1&controls=0&mute=1&enablejsapi=1"
-                    allow="autoplay"
-                    allowfullscreen>
-                </iframe>
-
-                <button class="scroll-btn" onclick="loadRandomVideo()">SCROLL</button>
-            </div>
+        div.innerHTML = `
+            <iframe
+                width="560"
+                height="315"
+                src="https://www.youtube.com/embed/${vid.id}"
+                frameborder="0"
+                allowfullscreen
+            ></iframe>
         `;
 
-        // Riattiva audio dopo autoplay
-        setTimeout(() => {
-            const iframe = document.getElementById("ytplayer");
-            iframe.contentWindow.postMessage(JSON.stringify({
-                event: "command",
-                func: "unMute",
-                args: []
-            }), "*");
-        }, 1200);
+        container.appendChild(div);
+
+        // PRELOAD del prossimo video
+        if (i < slice.length - 1) {
+            const preload = document.createElement("link");
+            preload.rel = "preload";
+            preload.as = "document";
+            preload.href = `https://www.youtube.com/embed/${slice[i+1].id}`;
+            document.head.appendChild(preload);
+        }
+    });
+
+    currentIndex += CHUNK_SIZE;
+}
+
+async function init() {
+    const res = await fetch("/api/links");
+    allVideos = await res.json();
+
+    loadNextChunk();
+}
+
+window.addEventListener("scroll", () => {
+    const scrollPos = window.scrollY + window.innerHeight;
+    const pageHeight = document.body.scrollHeight;
+
+    if (scrollPos > pageHeight - 800) {
+        if (currentIndex < allVideos.length) {
+            loadNextChunk();
+        }
     }
+});
+
+init();
 </script>
+
 
 </body>
 </html>
