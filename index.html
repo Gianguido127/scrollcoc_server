@@ -10,18 +10,27 @@
             margin: 0;
             padding: 0;
             background: black;
-            overflow-x: hidden;
             width: 100vw;
+            height: 100vh;
+
+            /*  Scroll stile TikTok */
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
         }
 
         .video-container {
             position: relative;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
+
+            /* ⭐ Ogni video è un punto di snap */
+            scroll-snap-align: start;
+
             display: flex;
             justify-content: center;
             align-items: center;
+
             animation: slideUp 0.4s ease-out;
         }
 
@@ -94,7 +103,7 @@ function loadNextChunk() {
 
         container.appendChild(div);
 
-        // PRELOAD del prossimo video
+        //  Preload del prossimo video
         if (i < slice.length - 1) {
             const preload = document.createElement("link");
             preload.rel = "preload";
@@ -103,7 +112,7 @@ function loadNextChunk() {
             document.head.appendChild(preload);
         }
 
-        // Pulsante scroll → passa al prossimo video
+        //  Pulsante SCROLL → snap al prossimo video
         div.querySelector(".scroll-btn").onclick = () => {
             window.scrollBy({
                 top: window.innerHeight,
@@ -124,6 +133,7 @@ async function init() {
     loadNextChunk();
 }
 
+//  Lazy loading infinito
 window.addEventListener("scroll", () => {
     const scrollPos = window.scrollY + window.innerHeight;
     const pageHeight = document.body.scrollHeight;
