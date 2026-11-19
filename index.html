@@ -64,6 +64,22 @@
                 opacity: 1;
             }
         }
+        #server-offline {
+            width: 100vw;
+            height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background: black;
+            color: white;
+
+            text-align: center;
+            font-weight: bold;
+
+            font-size: clamp(30px, 5vw, 80px);
+        }
     </style>
 </head>
 <body>
@@ -127,6 +143,16 @@ function loadNextChunk() {
 async function init() {
     const res = await fetch("/api/links");
     allVideos = await res.json();
+
+    // Database vuoto
+    if (!allVideos || allVideos.length === 0) {
+        document.body.innerHTML = `
+            <div id="server-offline">
+                IL SERVER NON E' ATTIVO
+            </div>
+        `;
+        return;
+    }
 
     shuffle(allVideos); // RANDOM
 
