@@ -10,27 +10,19 @@
             margin: 0;
             padding: 0;
             background: black;
-            width: 100vw;
+            overflow: hidden;
             height: 100vh;
-
-            /*  Scroll stile TikTok */
-            overflow-y: scroll;
-            scroll-snap-type: y mandatory;
-            scroll-behavior: smooth;
+            width: 100vw;
         }
 
         .video-container {
             position: relative;
             width: 100vw;
             height: 100vh;
-
-            /* ⭐ Ogni video è un punto di snap */
-            scroll-snap-align: start;
-
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-
             animation: slideUp 0.4s ease-out;
         }
 
@@ -54,16 +46,6 @@
             cursor: pointer;
         }
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(100vh);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
         #server-offline {
             width: 100vw;
             height: 100vh;
@@ -80,6 +62,17 @@
 
             font-size: clamp(30px, 5vw, 80px);
         }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -87,91 +80,71 @@
 <div id="videos"></div>
 
 <script>
-let allVideos = [];
-let currentIndex = 0;
-const CHUNK_SIZE = 20;
+    let videoList = [];
+    let history = [];
+    const HISTORY_SIZE = 50;
 
-// Mescola array (Fisher-Yates)
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+    async function init() {
+        try {
+            const res = await fetch("/api/links");
+            videoList = await res.json();
+
+            if (!videoList || videoList.length === 0) {
+                document.body.innerHTML = `
+                    <div id="server-offline">
+                        IL SERVER NON E' ATTIVO
+                    </div>
+                `;
+                return;
+            }
+
+            loadRandomVideo();
+
+        } catch (err) {
+            document.body.innerHTML = `
+                <div id="server-offline">
+                    IL SERVER NON E' ATTIVO
+                </div>
+            `;
+        }
     }
-}
 
-function loadNextChunk() {
-    const container = document.getElementById("videos");
-    const slice = allVideos.slice(currentIndex, currentIndex + CHUNK_SIZE);
+    function loadRandomVideo() {
+        let video;
+        let attempts = 0;
 
-    slice.forEach((vid, i) => {
-        const div = document.createElement("div");
-        div.className = "video-container";
+        do {
+            const randomIndex = Math.floor(Math.random() * videoList.length);
+            video = videoList[randomIndex];
+            attempts++;
+        } while (
+            history.includes(video.id) &&
+            attempts < 20
+        );
 
-        div.innerHTML = `
-            <iframe
-                src="https://www.youtube-nocookie.com/embed/${vid.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
-                allow="autoplay"
-                allowfullscreen
-            ></iframe>
+        history.push(video.id);
 
-            <button class="scroll-btn">SCROLL</button>
-        `;
-
-        container.appendChild(div);
-
-        //  Preload del prossimo video
-        if (i < slice.length - 1) {
-            const preload = document.createElement("link");
-            preload.rel = "preload";
-            preload.as = "document";
-            preload.href = `https://www.youtube-nocookie.com/embed/${slice[i+1].id}`;
-            document.head.appendChild(preload);
+        if (history.length > HISTORY_SIZE) {
+            history.shift();
         }
 
-        //  Pulsante SCROLL → snap al prossimo video
-        div.querySelector(".scroll-btn").onclick = () => {
-            window.scrollBy({
-                top: window.innerHeight,
-                behavior: "smooth"
-            });
-        };
-    });
+        document.getElementById("videos").innerHTML = `
+            <div class="video-container">
+                <iframe
+                    id="ytplayer"
+                    src="https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
+                    allow="autoplay"
+                    allowfullscreen>
+                </iframe>
 
-    currentIndex += CHUNK_SIZE;
-}
-
-async function init() {
-    const res = await fetch("/api/links");
-    allVideos = await res.json();
-
-    // Database vuoto
-    if (!allVideos || allVideos.length === 0) {
-        document.body.innerHTML = `
-            <div id="server-offline">
-                IL SERVER NON E' ATTIVO
+                <button class="scroll-btn" onclick="loadRandomVideo()">
+                    SCROLL
+                </button>
             </div>
         `;
-        return;
     }
 
-    shuffle(allVideos); // RANDOM
-
-    loadNextChunk();
-}
-
-//  Lazy loading infinito
-window.addEventListener("scroll", () => {
-    const scrollPos = window.scrollY + window.innerHeight;
-    const pageHeight = document.body.scrollHeight;
-
-    if (scrollPos > pageHeight - 800) {
-        if (currentIndex < allVideos.length) {
-            loadNextChunk();
-        }
-    }
-});
-
-init();
+    init();
 </script>
 
 </body>
