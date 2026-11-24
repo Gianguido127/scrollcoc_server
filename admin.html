@@ -96,6 +96,15 @@
         <h2>Database</h2>
         <button id="copyBtn">Copia database</button>
 
+        <button id="restoreBtn">Ripristina backup</button>
+
+        <input
+            type="file"
+            id="backupFile"
+            accept=".json"
+            style="display:none;"
+        >
+
         <table id="dbTable">
             <thead>
                 <tr>
@@ -119,98 +128,203 @@
     </div>
 
 <script>
-    async function updateCount() {
-        try {
-            const res = await fetch("/api/links");
-            const data = await res.json();
-            document.getElementById("countNumber").textContent = data.length;
-        } catch (err) {
-            document.getElementById("countNumber").textContent = "Errore";
-        }
+
+async function updateCount() {
+
+    try {
+
+        const res = await fetch("/api/links");
+        const data = await res.json();
+
+        document.getElementById("countNumber").textContent = data.length;
+
+    } catch (err) {
+
+        document.getElementById("countNumber").textContent = "Errore";
+
     }
 
-    async function loadDatabase() {
-        try {
-            const res = await fetch("/api/links");
-            const data = await res.json();
+}
 
-            const tbody = document.getElementById("dbTableBody");
+async function loadDatabase() {
+
+    try {
+
+        const res = await fetch("/api/links");
+        const data = await res.json();
+
+        const tbody = document.getElementById("dbTableBody");
+
+        tbody.innerHTML = "";
+
+        // Mostra solo i primi 7
+        const preview = data.slice(0, 7);
+
+        preview.forEach((item, index) => {
+
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${item.id}</td>
+            `;
+
+            tbody.appendChild(tr);
+
+        });
+
+        // Pulsante "Mostra tutti"
+        const expandBtn = document.getElementById("expandBtn");
+
+        expandBtn.onclick = () => {
+
             tbody.innerHTML = "";
 
-            // Mostra solo i primi 7
-            const preview = data.slice(0, 7);
+            data.forEach((item, index) => {
 
-            preview.forEach((item, index) => {
                 const tr = document.createElement("tr");
+
                 tr.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${item.id}</td>
                 `;
+
                 tbody.appendChild(tr);
+
             });
 
-            // Pulsante "Mostra tutti"
-            const expandBtn = document.getElementById("expandBtn");
-            expandBtn.onclick = () => {
-                tbody.innerHTML = "";
-                data.forEach((item, index) => {
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td>${item.id}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                expandBtn.disabled = true;
-                expandBtn.textContent = "Tabella completa mostrata";
-            };
+            expandBtn.disabled = true;
+            expandBtn.textContent = "Tabella completa mostrata";
 
-        } catch (err) {
-            const tbody = document.getElementById("dbTableBody");
-            tbody.innerHTML = "<tr><td colspan='2'>Errore nel caricamento.</td></tr>";
-        }
-    }
-
-    async function copyDatabase() {
-        try {
-            const res = await fetch("/api/links");
-            const data = await res.json();
-            const text = JSON.stringify(data, null, 2);
-
-            await navigator.clipboard.writeText(text);
-            alert("Database copiato negli appunti!");
-        } catch (err) {
-            alert("Errore nella copia del database.");
-            console.error(err);
-        }
-    }
-
-    async function updateDatabase() {
-        const log = document.getElementById("updateLog");
-        log.textContent = "";
-
-        // STREAMING LOG IN DIRETTA
-        const evtSource = new EventSource("/stream_update");
-
-        evtSource.onmessage = function(event) {
-            log.textContent += event.data + "\n";
-            log.scrollTop = log.scrollHeight;
         };
 
-        // AVVIA L'UPDATE
-        await fetch("/t1m2s7/update_database", { method: "POST" });
+    } catch (err) {
+
+        const tbody = document.getElementById("dbTableBody");
+
+        tbody.innerHTML =
+            "<tr><td colspan='2'>Errore nel caricamento.</td></tr>";
+
     }
 
-    // Aggiornamento automatico del count
-    setInterval(updateCount, 3000);
+}
 
-    // Caricamento iniziale
-    updateCount();
-    loadDatabase();
+async function copyDatabase() {
 
-    // Pulsanti
-    document.getElementById("updateBtn").onclick = updateDatabase;
-    document.getElementById("copyBtn").onclick = copyDatabase;
+    try {
+
+        const res = await fetch("/api/links");
+        const data = await res.json();
+
+        const text = JSON.stringify(data, null, 2);
+
+        await navigator.clipboard.writeText(text);
+
+        alert("Database copiato negli appunti!");
+
+    } catch (err) {
+
+        alert("Errore nella copia del database.");
+        console.error(err);
+
+    }
+
+}
+
+async function restoreBackup() {
+
+    document.getElementById("backupFile").click();
+
+}
+
+document.getElementById("backupFile").addEventListener("change", async (event) => {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    try {
+
+        const text = await file.text();
+        const jsonData = JSON.parse(text);
+
+        if (!Array.isArray(jsonData)) {
+
+            alert("Backup non valido.");
+            return;
+
+        }
+
+        const confirmRestore = confirm(
+            "ATTENZIONE!\n\n" +
+            "Il database attuale verrà sostituito completamente.\n\n" +
+            "Continuare?"
+        );
+
+        if (!confirmRestore) return;
+
+        const res = await fetch("/t1m2s7/restore_backup", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                data: jsonData
+            })
+
+        });
+
+        const result = await res.json();
+
+        alert(result.message);
+
+        loadDatabase();
+        updateCount();
+
+    } catch (err) {
+
+        alert("File JSON non valido.");
+
+    }
+
+});
+
+async function updateDatabase() {
+
+    const log = document.getElementById("updateLog");
+
+    log.textContent = "";
+
+    // STREAMING LOG IN DIRETTA
+    const evtSource = new EventSource("/stream_update");
+
+    evtSource.onmessage = function(event) {
+
+        log.textContent += event.data + "\n";
+        log.scrollTop = log.scrollHeight;
+
+    };
+
+    // AVVIA L'UPDATE
+    await fetch("/t1m2s7/update_database", { method: "POST" });
+
+}
+
+// Aggiornamento automatico del count
+setInterval(updateCount, 3000);
+
+// Caricamento iniziale
+updateCount();
+loadDatabase();
+
+// Pulsanti
+document.getElementById("updateBtn").onclick = updateDatabase;
+document.getElementById("copyBtn").onclick = copyDatabase;
+document.getElementById("restoreBtn").onclick = restoreBackup;
+
 </script>
 
 </body>
