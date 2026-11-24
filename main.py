@@ -108,6 +108,77 @@ def update_database(request: Request):
     return run_update()
 
 # ---------------------------
+# RESTORE BACKUP (protetto)
+# ---------------------------
+
+@app.post("/t1m2s7/restore_backup")
+async def restore_backup(request: Request):
+
+    user = request.cookies.get("admin_user")
+
+    if user not in SESSIONS:
+        return RedirectResponse("/login_admin")
+
+    try:
+
+        payload = await request.json()
+
+        if "data" not in payload:
+            return {
+                "status": "error",
+                "message": "Backup non valido."
+            }
+
+        backup_data = payload["data"]
+
+        if not isinstance(backup_data, list):
+            return {
+                "status": "error",
+                "message": "Backup non valido."
+            }
+
+        # verifica minima
+        for item in backup_data:
+            if not isinstance(item, dict):
+                return {
+                    "status": "error",
+                    "message": "Backup non valido."
+                }
+
+            if "id" not in item:
+                return {
+                    "status": "error",
+                    "message": "Backup non valido."
+                }
+
+        # rimozione doppioni
+        seen = set()
+        unique = []
+
+        for item in backup_data:
+
+            marker = json.dumps(item, sort_keys=True)
+
+            if marker not in seen:
+                seen.add(marker)
+                unique.append(item)
+
+        with open("links.json", "w") as f:
+            json.dump(unique, f, indent=4)
+
+        return {
+            "status": "ok",
+            "message": f"Backup ripristinato con successo ({len(unique)} elementi)."
+        }
+
+    except Exception as e:
+
+        return {
+            "status": "error",
+            "message": f"Errore durante il ripristino: {str(e)}"
+        }
+
+# ---------------------------
 # STREAMING LOG (SSE)
 # ---------------------------
 
