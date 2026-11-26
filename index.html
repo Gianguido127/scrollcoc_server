@@ -132,7 +132,7 @@
             <div class="video-container">
                 <iframe
                     id="ytplayer"
-                    src="https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
+                    src="https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
                     allow="autoplay"
                     allowfullscreen>
                 </iframe>
@@ -142,6 +142,18 @@
                 </button>
             </div>
         `;
+
+        setTimeout(() => {
+            const iframe = document.getElementById("ytplayer");
+
+            if (!iframe) return;
+
+            iframe.contentWindow.postMessage(JSON.stringify({
+                event: "command",
+                func: "unMute",
+                args: []
+            }), "*");
+        }, 1000);
     }
 
     init();
