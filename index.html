@@ -73,6 +73,23 @@
                 opacity: 1;
             }
         }
+
+        .audio-btn {
+            position: absolute;
+            bottom: 60px;
+            left: calc(50% + 130px);
+
+            padding: 15px 20px;
+            font-size: 20px;
+
+            border: none;
+            border-radius: 12px;
+
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -132,7 +149,7 @@
             <div class="video-container">
                 <iframe
                     id="ytplayer"
-                    src="https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
+                    src="https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1"
                     allow="autoplay"
                     allowfullscreen>
                 </iframe>
@@ -140,20 +157,24 @@
                 <button class="scroll-btn" onclick="loadRandomVideo()">
                     SCROLL
                 </button>
+
+                <button class="audio-btn" onclick="unmuteVideo()">
+                    🔊 AUDIO
+                </button>
             </div>
         `;
+    }
 
-        setTimeout(() => {
-            const iframe = document.getElementById("ytplayer");
+    function unmuteVideo() {
+        const iframe = document.getElementById("ytplayer");
 
-            if (!iframe) return;
+        if (!iframe) return;
 
-            iframe.contentWindow.postMessage(JSON.stringify({
-                event: "command",
-                func: "unMute",
-                args: []
-            }), "*");
-        }, 1000);
+        iframe.contentWindow.postMessage(JSON.stringify({
+            event: "command",
+            func: "unMute",
+            args: []
+        }), "*");
     }
 
     init();
