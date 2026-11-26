@@ -77,10 +77,10 @@
         .audio-btn {
             position: absolute;
             bottom: 60px;
-            left: calc(50% + 130px);
+            left: calc(50% + 125px);
 
-            padding: 15px 20px;
-            font-size: 20px;
+            width: 60px;
+            height: 60px;
 
             border: none;
             border-radius: 12px;
@@ -88,6 +88,7 @@
             background-color: rgba(0,0,0,0.6);
             color: white;
 
+            font-size: 28px;
             cursor: pointer;
         }
     </style>
@@ -158,23 +159,43 @@
                     SCROLL
                 </button>
 
-                <button class="audio-btn" onclick="unmuteVideo()">
-                    🔊 AUDIO
+                <button
+                    id="audioBtn"
+                    class="audio-btn"
+                    onclick="toggleAudio()">
+                    🔊
                 </button>
             </div>
         `;
     }
 
-    function unmuteVideo() {
+    function toggleAudio() {
+
         const iframe = document.getElementById("ytplayer");
+        const btn = document.getElementById("audioBtn");
 
-        if (!iframe) return;
+        if (!iframe || !btn) return;
 
-        iframe.contentWindow.postMessage(JSON.stringify({
-            event: "command",
-            func: "unMute",
-            args: []
-        }), "*");
+        if (btn.textContent === "🔊") {
+
+            iframe.contentWindow.postMessage(JSON.stringify({
+                event: "command",
+                func: "unMute",
+                args: []
+            }), "*");
+
+            btn.textContent = "🔇";
+
+        } else {
+
+            iframe.contentWindow.postMessage(JSON.stringify({
+                event: "command",
+                func: "mute",
+                args: []
+            }), "*");
+
+            btn.textContent = "🔊";
+        }
     }
 
     init();
